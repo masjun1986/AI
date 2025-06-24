@@ -35,3 +35,46 @@ data['is_fraud'] = labels
 
 df = pd.DataFrame(data)
 print(df.head())
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+features = ['transaction_amount', 'transaction_hour', 'customer_age',
+            'is_foreign_transaction', 'is_high_risk_country', 'used_vpn',
+            'num_prev_transactions', 'account_balance']
+
+X = df[features]
+y = df['is_fraud']
+
+# Normalisasi
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print(classification_report(y_test, y_pred))
+
+
+def predict_fraud(transaction_data):
+    scaled = scaler.transform([transaction_data])
+    prediction = model.predict(scaled)[0]
+    probability = model.predict_proba(scaled)[0][1]
+    return "FRAUD" if prediction == 1 else "NORMAL", round(probability, 2)
+
+# Contoh transaksi: [amount, hour, age, foreign, risk_country, vpn, prev_tx, balance]
+new_tx = [12000, 23, 35, 1, 1, 1, 3, 400000]
+status, prob = predict_fraud(new_tx)
+print(f"Prediksi: {status}, Confidence: {prob}")
+
+
+
