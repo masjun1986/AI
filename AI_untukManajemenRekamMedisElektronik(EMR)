@@ -1,0 +1,67 @@
+ #1. Generate Dataset EMR (Simulasi 1000 Catatan Pasien)
+
+import pandas as pd
+import numpy as np
+import random
+
+np.random.seed(42)
+
+# Contoh template data medis mentah
+templates = [
+    "Pasien mengeluh {gejala} selama {durasi}. Telah diberikan {terapi}.",
+    "Keluhan utama adalah {gejala}, berlangsung selama {durasi}, tidak disertai {gejala_negatif}.",
+    "Pasien datang dengan keluhan {gejala}, sudah diobati dengan {terapi} dan ada perbaikan.",
+    "Riwayat: {gejala} sejak {durasi}. Tidak ada keluhan {gejala_negatif}."
+]
+
+gejala = ["demam", "batuk", "nyeri perut", "pusing", "mual", "sesak napas"]
+durasi = ["2 hari", "1 minggu", "3 jam", "5 hari", "semalam"]
+terapi = ["paracetamol", "antibiotik", "obat batuk", "analgesik"]
+gejala_negatif = ["mimisan", "nyeri dada", "muntah darah", "kaku leher"]
+
+# Generate 1000 catatan
+records = []
+for _ in range(1000):
+    template = random.choice(templates)
+    text = template.format(
+        gejala=random.choice(gejala),
+        durasi=random.choice(durasi),
+        terapi=random.choice(terapi),
+        gejala_negatif=random.choice(gejala_negatif)
+    )
+    records.append(text)
+
+df = pd.DataFrame({"emr_note": records})
+print(df.sample(5))
+
+
+#2. Instalasi Model Summarization (T5)
+!pip install transformers
+
+
+# AI Model Summarization (T5) – Ringkasan Catatan Medis
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+
+# Load model & tokenizer T5
+tokenizer = T5Tokenizer.from_pretrained("t5-small")
+model = T5ForConditionalGeneration.from_pretrained("t5-small")
+
+# Fungsi ringkasan
+def summarize_note(text):
+    input_text = "summarize: " + text
+    input_ids = tokenizer.encode(input_text, return_tensors="pt", max_length=512, truncation=True)
+    output_ids = model.generate(input_ids, max_length=30, num_beams=2, early_stopping=True)
+    summary = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    return summary
+
+# Contoh ringkasan
+sample_text = df['emr_note'].iloc[0]
+summary = summarize_note(sample_text)
+
+print("📝 Asli:", sample_text)
+print("📌 Ringkasan:", summary)
+
+
+
+
+
